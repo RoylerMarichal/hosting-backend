@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  relationMode      = "prisma"
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int           @id @default(autoincrement())
+  email            String        @unique @db.VarChar(255)
+  username         String        @unique @db.VarChar(255)
+  name             String        @db.VarChar(255)
+  avatar           String?       @db.VarChar(255)
+  resetCode        String?       @db.VarChar(7)
+  resetCodeExpires DateTime?
+  password         String        @db.VarChar(255)
+  phone            String?       @db.VarChar(16)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  amounts          UserAmounts[]
+  Order            Order[]
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  packageId Int
+  userId    Int
+  status    Status   @default(PENDING)
+  data      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  package   Package  @relation(fields: [packageId], references: [id])
+}
+
+model Service {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  packages  Package[]
+}
+
+model Package {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  price       Float
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  service     Service  @relation(fields: [serviceId], references: [id])
+  serviceId   Int
+  Order       Order[]
+}
+
+model AdminCurrencies {
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @db.VarChar(11)
+  main                  Int                     @default(0)
+  code                  String                  @db.VarChar(11)
+  rate                  Float
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  UserAmounts           UserAmounts[]
+  AdminMovementsAmounts AdminMovementsAmounts[]
+}
+
+model UserAmounts {
+  id             Int             @id @default(autoincrement())
+  user           User            @relation(fields: [userId], references: [id])
+  userId         Int
+  currency       AdminCurrencies @relation(fields: [currencyId], references: [id])
+  currencyId     Int             @default(1)
+  amount         Float           @default(0)
+  amount_pending Float           @default(0)
+  amount_stopad  Float           @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([currencyId])
+}
+
+model AdminMovementsAmounts {
+  id         BigInt             @id @default(autoincrement())
+  model      ModelType          @default(USER)
+  modelId    Int
+  details    String             @db.VarChar(128)
+  currency   AdminCurrencies    @relation(fields: [currencyId], references: [id])
+  currencyId Int
+  amount     Float
+  type       MovementAmountType @default(CREDIT)
+  status     Status             @default(COMPLETED)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([currencyId])
+}
+
+enum MovementAmountType {
+  DEBIT
+  CREDIT
+}
+
+enum ModelType {
+  USER
+  PRODUCT
+  SERVICE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+  COMPLETED
+  DRAFT
+}
