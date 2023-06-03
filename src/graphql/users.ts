@@ -2,9 +2,7 @@ import bcrypt from "bcryptjs";
 import { PrismaClient, Prisma, UserType } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { MovementType } from "../types/MovementsTypes";
-
-import { PubSub, withFilter } from "graphql-subscriptions";
-
+import { PubSub  } from "graphql-subscriptions";
 import { newMovement } from "../facades/movementsAmounts.js";
 import {
   propagatePublicationsToUser,
